@@ -1,25 +1,21 @@
 /**
  * Text
  */
-const { Markup } = require('telegraf');
+const { Markup, Composer } = require('telegraf');
 
 module.exports = async (ctx, next) => {
-	if (ctx[ctx.updateType].text == 'Single Button') {
-		ctx.telegram.sendMessage(ctx.message.chat.id, 'Received', Markup.removeKeyboard()).then((response) => {
-			ctx.telegram.deleteMessage(response.chat.id, response.message_id);
-		});
-	}
-
-	if (ctx[ctx.updateType].from.is_bot === true) {
-		if (ctx[ctx.updateType].sender_chat.type == 'channel') {
-			Helpers.string.twig_render("TRIGGER TEXT EVENT {{ sender_chat.title }}", ctx[ctx.updateType]).then((compiled_string) => {
-				ctx.telegram.sendMessage(ctx.message.chat.id, compiled_string);
-			}, (error) => SendLogErrors(__filename, "twing error render", error));
+	var replied_message = ctx[ctx.updateType].reply_to_message;
+	if (ctx.has_progress) {
+		// has progress
+		if (replied_message !== undefined) {
+			console.log(ctx.state);
+		} else {
 		}
 	} else {
-		Helpers.string.twig_render("TRIGGER TEXT EVENT {{ from.first_name ~' '~ from.last_name }}", ctx[ctx.updateType]).then((compiled_string) => {
-			ctx.telegram.sendMessage(ctx.message.chat.id, compiled_string);
-		}, (error) => SendLogErrors(__filename, "twing error render", error));
+		// no progress
+		if (replied_message !== undefined) {
+		} else {
+		}
 	}
 
 	console.log(__filename, ctx[ctx.updateType]); // debug

@@ -1,62 +1,42 @@
 /**
- * Identify chat
- *
- * @param      {object}    ctx
- * @param      {function}  next
+ * /train command
  */
-module.exports.identify = async (ctx, next) => {
-	// Chat objects
-	var chat = ctx[ctx.updateType].chat;
+const { Markup } = require('telegraf');
 
-	// Searching for identified chats in database
-	Models['chat'].findOne({ where: { 'chat-id': chat.id } }).then((chat_available) => {
-		// update chat status if bot left the chat
-		var status = ((typeof ctx[ctx.updateType].left_chat_participant !== 'undefined' && ctx[ctx.updateType].left_chat_participant.id == ctx.botInfo.id) ? 'not-available' : 'available');
-		if (chat_available == null) {
-			Models['chat'].create({
-				'chat-id': chat.id,
-				'chat-type': chat.type,
-				'chat-title': (chat.type == 'private') ? ((chat.last_name !== undefined) ? chat.first_name+' '+chat.last_name : chat.first_name) : chat.title,
-				'language-code': (chat.type == 'private') ? (chat.language_code !== undefined) ? chat.language_code : 'en' : 'en',
-				'status': status
-			});
-		} else {
-			chat_available.update({ status: status });
-		}
-	}, (error) => SendLogErrors(__filename, "middleware error", error));
-
-	if (typeof next == 'function') {
-		return next();
-	}
-}
-
-/**
- * Check state
- *
- * @param {double} chat
- * @param {double} from
- */
-module.exports.state = async ({ chat, from }, ctx, next) => {
-	var where = { 'chat-id': chat};
-
-	if (from !== undefined) {
-		where['user-id'] = from;
-	}
-
-	Models['user-state'].findOne({ where: where }).then((state) => {
-		if (state !== null) {
-			if (typeof ctx == 'object') {
-				ctx.state = state;
+i18next.init({
+	lng: 'en',
+	resources: {
+		id: {
+			translation: {
+				"reply": "Halo <b>{{ from.first_name ~' '~ from.last_name }}</b>",
+				"inline_buttons": {
+					"notes": "Catatan",
+					"contacts": "Kontak",
+					"reminders": "Pengingat",
+					"new_post": "Postingan Baru"
+				}
+			}
+		},
+		en: {
+			translation: {
+				"reply": "Hello <b>{{ from.first_name ~' '~ from.last_name }}</b>",
+				"inline_buttons": {
+					"notes": "Notes",
+					"contacts": "Contacts",
+					"reminders": "Reminders",
+					"new_post": "New Post"
+				}
 			}
 		}
-	}, (error) => SendLogErrors(__filename, "middleware error", error));
-
-	if (typeof next == 'function') {
-		return next();
 	}
-}
+});
 
-module.exports.reply_type = async (ctx, next) => {
+module.exports.languages = [
+	{ code: 'id', command: 'ajarkan_bot', description: 'Ajarkan bot', aliases: ['belajar'] },
+	{ code: 'en', command: 'train_bot', description: 'Train bot', aliases: ['train', 'learn'] }
+];
+
+module.exports.run = async (ctx, next) => {
 
 	var type = true;
 	var is_reply = false
@@ -144,3 +124,9 @@ module.exports.reply_type = async (ctx, next) => {
 		break;
 	}
 }
+
+module.exports.execute = (ctx, next) => {
+	console.log('execyute');
+}
+
+

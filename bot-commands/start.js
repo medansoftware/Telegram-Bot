@@ -3,16 +3,12 @@
  */
 const { Markup } = require('telegraf');
 
-module.exports.languages = [
-	{ code: 'id', command: 'mulai', description: 'Mulai bot', aliases: [] },
-	{ code: 'en', command: 'start', description: 'Start bot', aliases: [] }
-];
-
 i18next.init({
 	lng: 'en',
 	resources: {
 		id: {
 			translation: {
+				"start": "Start bot",
 				"reply": "Halo <b>{{ from.first_name ~' '~ from.last_name }}</b>",
 				"inline_buttons": {
 					"notes": "Catatan",
@@ -24,6 +20,7 @@ i18next.init({
 		},
 		en: {
 			translation: {
+				"start": "Mulai bot",
 				"reply": "Hello <b>{{ from.first_name ~' '~ from.last_name }}</b>",
 				"inline_buttons": {
 					"notes": "Notes",
@@ -35,6 +32,11 @@ i18next.init({
 		}
 	}
 });
+
+module.exports.languages = [
+	{ code: 'id', command: 'mulai', description: i18next.t('start'), aliases: [] },
+	{ code: 'en', command: 'start', description: i18next.t('start'), aliases: [] }
+];
 
 module.exports.run = async (ctx, next) => {
 	ctx.session.has_progress = false;

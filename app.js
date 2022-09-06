@@ -23,9 +23,13 @@ const { Telegraf, Markup, session } = require('telegraf');
 const TelegrafLocalSession = require('telegraf-session-local');
 const moment = require('moment');
 const moment_duration_format = require('moment-duration-format');
+const node_nlp = require('node-nlp');
+const node_cron = require('node-cron');
 
 global.DB;
 global.Bot = new Telegraf(process.env.BOT_TOKEN);
+global.NLP = new Object;
+global.Cron = node_cron;
 global.Helpers = require('./helpers');
 global.i18next = require('i18next');
 global.Models;
@@ -66,6 +70,37 @@ async.waterfall([
 
 		var BotLanguages = ['en', 'id'];
 		var ScopeNames = ['all_chat_administrators', 'all_group_chats', 'all_private_chats', 'chat_administrators', 'chat_member', 'chat', 'default'];
+
+		// nlp_manager: node_nlp.NlpManager
+		// nlu_manager: node_nlp.NluManager,
+		// ner_manager: node_nlp.NerManager
+		NLP.nlp_manager = new node_nlp.NlpManager({
+			languages: BotLanguages,
+			nlu: { log: false }
+		});
+
+		// NLP.nlp_manager.addDocument('en', 'goodbye for now', 'greetings.bye');
+		// NLP.nlp_manager.addDocument('en', 'bye bye take care', 'greetings.bye');
+		// NLP.nlp_manager.addDocument('en', 'okay see you later', 'greetings.bye');
+		// NLP.nlp_manager.addDocument('en', 'bye for now', 'greetings.bye');
+		// NLP.nlp_manager.addDocument('en', 'i must go', 'greetings.bye');
+		// NLP.nlp_manager.addDocument('en', 'hello', 'greetings.hello');
+		// NLP.nlp_manager.addDocument('en', 'hi', 'greetings.hello');
+		// NLP.nlp_manager.addDocument('en', 'howdy', 'greetings.hello');
+
+		// // Train also the NLG
+		// NLP.nlp_manager.addAnswer('en', 'greetings.bye', 'Till next time');
+		// NLP.nlp_manager.addAnswer('en', 'greetings.bye', 'see you soon!');
+		// NLP.nlp_manager.addAnswer('en', 'greetings.hello', 'Hey there!');
+		// NLP.nlp_manager.addAnswer('en', 'greetings.hello', 'Greetings!');
+
+		// // Train and save the model.
+		// (async() => {
+		// 	await NLP.nlp_manager.train();
+		// 	NLP.nlp_manager.save();
+		// 	const response = await NLP.nlp_manager.process('en', 'I should fuck hello');
+		// 	console.log(response);
+		// })();
 
 		await Bot.telegram.deleteMyCommands();
 
@@ -109,10 +144,14 @@ async.waterfall([
 		 */
 		Bot.use(async (ctx, next) => {
 			if (ctx.has_progress) {
-				console.log(ctx.session)
 				switch (ctx.session.progress.type) {
 					case 'command':
-						BotCommands[ctx.session.progress.name].execute(ctx, next);
+						var execute = BotCommands[ctx.session.progress.name].execute;
+						if (typeof execute !== 'undefined') {
+							ctx.state.execute = execute;
+						}
+
+						return next();
 					break;
 
 					case 'middleware':
@@ -124,6 +163,7 @@ async.waterfall([
 					break;
 				}
 			} else {
+				console.log('not has progress')
 				return next();
 			}
 		});
@@ -144,12 +184,18 @@ async.waterfall([
 						BotCommandsWithoutScope.push({ commands: [], language_code: BotCommands[name].languages[key].code });
 					}
 
+					// Hears command
+					Bot.hears('!'+BotCommands[name].languages[key].command, BotCommands[name].run);
+
 					// Listen command
 					Bot.command(BotCommands[name].languages[key].command, BotCommands[name].run);
 
 					// Listen to alias command
 					if (typeof BotCommands[name].languages[key].aliases !== 'undefined' && Array.isArray(BotCommands[name].languages[key].aliases)) {
 						for (var alias = 0; alias < BotCommands[name].languages[key].aliases.length; alias++) {
+							// Hears command
+							Bot.hears('!'+BotCommands[name].languages[key].aliases[alias], BotCommands[name].run);
+
 							// Listen command
 							Bot.command(BotCommands[name].languages[key].aliases[alias], BotCommands[name].run);
 						}

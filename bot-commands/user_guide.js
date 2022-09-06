@@ -9,7 +9,5 @@ module.exports.languages = [
 ];
 
 module.exports.run = (ctx, next) => {
-	console.log('xss', ctx.state);
-	console.log('xss', ctx.session)
 	ctx.reply('USER GUIDE COMMAND');
 }
